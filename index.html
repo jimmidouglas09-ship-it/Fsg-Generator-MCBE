@@ -514,54 +514,55 @@
         font-size: 1.6rem;
       }
     }
-      .discord {
-        margin-top: 30px;
-        background: var(--minecraft-black);
-        border: 6px solid var(--minecraft-dark-gray);
-        color: var(--minecraft-white);
-        font-size: 1.6rem;
-        font-family: 'VT323', monospace;
-        letter-spacing: 1px;
-        padding: 12px;
-        text-align: center;
-        max-width: 500px;
-        width: 80vw;
-        box-shadow: 
-         inset 4px 4px 8px rgba(255,255,255,0.1),
-         inset -4px -4px 8px rgba(0,0,0,0.6),
-         0 4px 8px rgba(0,0,0,0.3);
-        image-rendering: pixelated;
-        position: relative;
-        margin: 0 auto;
-     }
+    
+    .discord {
+      margin-top: 30px;
+      background: var(--minecraft-black);
+      border: 6px solid var(--minecraft-dark-gray);
+      color: var(--minecraft-white);
+      font-size: 1.6rem;
+      font-family: 'VT323', monospace;
+      letter-spacing: 1px;
+      padding: 12px;
+      text-align: center;
+      max-width: 500px;
+      width: 80vw;
+      box-shadow: 
+        inset 4px 4px 8px rgba(255,255,255,0.1),
+        inset -4px -4px 8px rgba(0,0,0,0.6),
+        0 4px 8px rgba(0,0,0,0.3);
+      image-rendering: pixelated;
+      position: relative;
+      margin: 0 auto;
+    }
 
-     .discord::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: repeating-linear-gradient(
-          0deg,
-          transparent 0px,
-          transparent 2px,
-          rgba(255, 255, 255, 0.05) 2px,
-          rgba(255, 255, 255, 0.05) 4px
-       );
-       pointer-events: none;
+    .discord::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(255, 255, 255, 0.05) 2px,
+        rgba(255, 255, 255, 0.05) 4px
+      );
+      pointer-events: none;
     }
 
     .discord a {
-       color: var(--minecraft-blue);
-       text-decoration: none;
-       font-weight: bold;
-       transition: color 0.2s;
+      color: var(--minecraft-blue);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.2s;
     }
 
     .discord a:hover {
-       color: var(--minecraft-white);
-       text-decoration: underline;
+      color: var(--minecraft-white);
+      text-decoration: underline;
     }
 
   </style>
@@ -659,6 +660,10 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
   let ruinedPortalSeeds = [];
   let classicSeeds = [];
 
+  // E
+  
+  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwWwWHYHjmOEIBdyMD7coDQdNqMNw6D9RlNnIy_-bl768IR2QdocLHolGYKHIdRZpi6Zw/exec';
+
   let currentPage = 'filterPage';
   let cooldowns = {
     stronghold: { active: false, time: 10 },
@@ -666,6 +671,38 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
     classic: { active: false, time: 10 }
   };
   let intervals = {};
+
+  // Function to log seed to Google Sheets
+  async function logToGoogleSheet(seed, filterType) {
+    if (GOOGLE_SHEET_URL === 'https://script.google.com/macros/s/AKfycbwWwWHYHjmOEIBdyMD7coDQdNqMNw6D9RlNnIy_-bl768IR2QdocLHolGYKHIdRZpi6Zw/exec') {
+      console.warn('Google Sheets logging not configured');
+      return;
+    }
+
+    try {
+      const timestamp = new Date().toISOString();
+      const data = {
+        seed: seed,
+        filterType: filterType,
+        timestamp: timestamp,
+        userAgent: navigator.userAgent,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+
+      await fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      console.log('Seed logged successfully');
+    } catch (error) {
+      console.error('Error logging to Google Sheets:', error);
+    }
+  }
 
   // Load seeds from JSON
   async function loadSeeds() {
@@ -680,7 +717,6 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
       ruinedPortalSeeds = await ruinedPortalRes.json();
       classicSeeds = await classicRes.json();
 
-      // enable buttons after loading
       document.getElementById("strongholdSeedBtn").disabled = false;
       document.getElementById("ruinedPortalSeedBtn").disabled = false;
       document.getElementById("classicSeedBtn").disabled = false;
@@ -736,8 +772,10 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
   document.getElementById('strongholdSeedBtn').addEventListener('click', () => {
     if (!cooldowns.stronghold.active && strongholdSeeds.length > 0) {
       const seedBox = document.getElementById('strongholdSeedBox');
-      seedBox.textContent = getRandomSeed(strongholdSeeds);
+      const seed = getRandomSeed(strongholdSeeds);
+      seedBox.textContent = seed;
       seedBox.style.display = 'flex';
+      logToGoogleSheet(seed, 'Stronghold Village');
       startCooldown('stronghold');
     }
   });
@@ -747,9 +785,11 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
     if (!cooldowns.ruinedPortal.active && ruinedPortalSeeds.length > 0) {
       const seedBox = document.getElementById('ruinedPortalSeedBox');
       const downloadBox = document.getElementById('downloadBox');
-      seedBox.textContent = getRandomSeed(ruinedPortalSeeds);
+      const seed = getRandomSeed(ruinedPortalSeeds);
+      seedBox.textContent = seed;
       seedBox.style.display = 'flex';
       downloadBox.style.display = 'none';
+      logToGoogleSheet(seed, 'Ruined Portal');
       startCooldown('ruinedPortal');
     }
   });
@@ -758,41 +798,39 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
   document.getElementById('classicSeedBtn').addEventListener('click', () => {
     if (!cooldowns.classic.active && classicSeeds.length > 0) {
       const seedBox = document.getElementById('classicSeedBox');
-      seedBox.textContent = getRandomSeed(classicSeeds);
+      const seed = getRandomSeed(classicSeeds);
+      seedBox.textContent = seed;
       seedBox.style.display = 'flex';
+      logToGoogleSheet(seed, 'Classic');
       startCooldown('classic');
     }
   });
 
-  // disable buttons until seeds are loaded
   document.getElementById("strongholdSeedBtn").disabled = true;
   document.getElementById("ruinedPortalSeedBtn").disabled = true;
   document.getElementById("classicSeedBtn").disabled = true;
 
   function setupCopyOnDoubleClick(boxId) {
-  const box = document.getElementById(boxId);
-  box.addEventListener('dblclick', () => {
-    const seed = box.textContent.trim();
-    if (seed !== "") {
-      navigator.clipboard.writeText(seed).then(() => {
-        box.textContent = "Seed copied!";
-        setTimeout(() => {
-          box.textContent = seed;
-        }, 1500);
-      }).catch(err => {
-        console.error("Error in copy:", err);
-      });
-    }
-  });
-}
+    const box = document.getElementById(boxId);
+    box.addEventListener('dblclick', () => {
+      const seed = box.textContent.trim();
+      if (seed !== "") {
+        navigator.clipboard.writeText(seed).then(() => {
+          box.textContent = "Seed copied!";
+          setTimeout(() => {
+            box.textContent = seed;
+          }, 1500);
+        }).catch(err => {
+          console.error("Error in copy:", err);
+        });
+      }
+    });
+  }
 
-// Inizializza la funzione per entrambe le seed box
-setupCopyOnDoubleClick('strongholdSeedBox');
-setupCopyOnDoubleClick('ruinedPortalSeedBox');
-setupCopyOnDoubleClick('classicSeedBox');
+  setupCopyOnDoubleClick('strongholdSeedBox');
+  setupCopyOnDoubleClick('ruinedPortalSeedBox');
+  setupCopyOnDoubleClick('classicSeedBox');
 
-
-  // Load seeds on page load
   loadSeeds();
 
   
