@@ -698,31 +698,6 @@ async function logToGoogleSheet(seed, filterType) {
   }
 }
 
-    try {
-      const timestamp = new Date().toISOString();
-      const data = {
-        seed: seed,
-        filterType: filterType,
-        timestamp: timestamp,
-        userAgent: navigator.userAgent,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      };
-
-      await fetch(GOOGLE_SHEET_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-      
-      console.log('Seed logged successfully');
-    } catch (error) {
-      console.error('Error logging to Google Sheets:', error);
-    }
-  }
-
   // Load seeds from JSON
   async function loadSeeds() {
     try {
