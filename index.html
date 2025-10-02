@@ -671,12 +671,32 @@ Classic: guarantees stronghold village and insta fort, greatly increased pearl r
   };
   let intervals = {};
 
-  // Function to log seed to Google Sheets
-  async function logToGoogleSheet(seed, filterType) {
-    if (GOOGLE_SHEET_URL === 'PASTE_YOUR_GOOGLE_SCRIPT_URL_HERE') {
-      console.warn('Google Sheets logging not configured');
-      return;
-    }
+  // Function to log seed to Google Sheet
+async function logToGoogleSheet(seed, filterType) {
+  try {
+    const timestamp = new Date().toISOString();
+    const data = {
+      seed: seed,
+      filterType: filterType,
+      timestamp: timestamp,
+      userAgent: navigator.userAgent,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+
+    await fetch(GOOGLE_SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    console.log('Seed logged successfully');
+  } catch (error) {
+    console.error('Error logging to Google Sheets:', error);
+  }
+}
 
     try {
       const timestamp = new Date().toISOString();
